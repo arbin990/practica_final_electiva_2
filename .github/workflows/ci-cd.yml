@@ -29,16 +29,16 @@ jobs:
         echo ""
         echo "🔍 Verificando si existe el texto requerido:"
         if grep -q "Hola mundo, esta es la practica final de electiva 2" index.html; then
-          echo "✅ Texto 'Hola Mundo DevOps' encontrado en index.html"
+          echo "✅ Texto 'Hola mundo, esta es la practica final de electiva 2' encontrado en index.html"
         else
-          echo "❌ Texto 'Hola Mundo DevOps' NO encontrado en index.html"
+          echo "❌ Texto 'Hola mundo, esta es la practica final de electiva 2' NO encontrado en index.html"
           exit 1
         fi
         
-        if grep -q "funcionando correctamente" index.html; then
-          echo "✅ Texto 'funcionando correctamente' encontrado en index.html"
+        if grep -q "Arbin Oscar Tejada Mercedes 2022-1924" index.html; then
+          echo "✅ Texto 'Arbin Oscar Tejada Mercedes 2022-1924' encontrado en index.html"
         else
-          echo "❌ Texto 'funcionando correctamente' NO encontrado en index.html"
+          echo "❌ Texto 'Arbin Oscar Tejada Mercedes 2022-1924' NO encontrado en index.html"
           exit 1
         fi
 

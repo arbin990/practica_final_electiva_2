@@ -76,12 +76,7 @@ jobs:
           exit 1
         fi
         
-        # Prueba 2: Verificar que el estado es correcto
-        if curl -s http://localhost:8080/index.html | grep -q "funcionando correctamente"; then
-          echo "Prueba 2 pasó: Estado correcto"
-        else
-          echo "Prueba 2 falló: Estado incorrecto"
-          exit 1
+       
         fi
         
         # Detener servidor

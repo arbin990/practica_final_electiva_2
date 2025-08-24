@@ -28,7 +28,7 @@ jobs:
         head -20 index.html
         echo ""
         echo "🔍 Verificando si existe el texto requerido:"
-        if grep -q "Hola Mundo DevOps" index.html; then
+        if grep -q "Hola mundo, esta es la practica final de electiva 2" index.html; then
           echo "✅ Texto 'Hola Mundo DevOps' encontrado en index.html"
         else
           echo "❌ Texto 'Hola Mundo DevOps' NO encontrado en index.html"

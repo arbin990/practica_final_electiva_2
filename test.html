@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Pruebas de la Aplicación</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 20px; 
+            background-color: #f7fafc;
+        }
+        h1 {
+            color: #2d3748;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .test-result { 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 6px;
+        }
+        .pass { 
+            background-color: #c6f6d5; 
+            border-left: 5px solid #38a169; 
+            color: #22543d;
+        }
+        .fail { 
+            background-color: #fed7d7; 
+            border-left: 5px solid #e53e3e; 
+            color: #742a2a;
+        }
+        .summary {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Pruebas de la Aplicación Hola Mundo</h1>
+        <div id="test-results"></div>
+    </div>
+
+    <script>
+    
+        const appContent = `
+  <h1>Hola mundo, esta es la practica final de electiva 2.</h1>
+<P>Arbin Oscar Tejada Mercedes 2022-1924</P>
+
+        `;
+
+        function displayResult(testName, passed) {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            resultDiv.innerHTML = `<strong>${testName}:</strong> ${passed ? '✅ PASÓ' : '❌ FALLÓ'}`;
+            document.getElementById('test-results').appendChild(resultDiv);
+            return passed;
+        }
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(appContent, 'text/html');
+
+        let passedTests = 0;
+        let totalTests = 0;
+
+        totalTests++;
+        const title = doc.querySelector('h1');
+        const titleTest = title && title.textContent.includes('Hola Mundo DevOps');
+        if (displayResult('Título correcto en la página', titleTest)) passedTests++;
+
+        totalTests++;
+        const statusElement = doc.getElementById('status');
+        const statusTest = statusElement !== null;
+        if (displayResult('Elemento de estado presente', statusTest)) passedTests++;
+
+        totalTests++;
+        const statusTextTest = statusElement && statusElement.textContent.includes('funcionando correctamente');
+        if (displayResult('Texto de estado correcto', statusTextTest)) passedTests++;
+
+        totalTests++;
+        const paragraph = doc.querySelector('p');
+        const paragraphTest = paragraph && paragraph.textContent.includes('CI/CD');
+        if (displayResult('Párrafo descriptivo presente', paragraphTest)) passedTests++;
+
+        const allTestsPassed = passedTests === totalTests;
+        const summaryDiv = document.createElement('div');
+        summaryDiv.className = `summary ${allTestsPassed ? 'pass' : 'fail'}`;
+        summaryDiv.innerHTML = `
+            <h2>Resumen de Pruebas</h2>
+            <p>${passedTests} de ${totalTests} pruebas pasaron correctamente</p>
+            <p>Estado general: ${allTestsPassed ? '✅ ÉXITO' : '❌ FALLÓ'}</p>
+        `;
+        
+        document.querySelector('.test-container').appendChild(summaryDiv);
+
+        if (typeof process !== 'undefined' && process.exit) {
+            process.exit(allTestsPassed ? 0 : 1);
+        }
+    </script>
+</body>
+</html>

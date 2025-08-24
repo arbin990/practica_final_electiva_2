@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  DOCKER_IMAGE_NAME: mi-app-html
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+
 jobs:
   test:
     name: Ejecutar pruebas
@@ -15,31 +19,61 @@ jobs:
     - name: Checkout código
       uses: actions/checkout@v3
 
-    - name: Configurar Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
+    - name: Verificar estructura de archivos
+      run: |
+        echo "📁 Contenido del repositorio:"
+        ls -la
+        echo ""
+        echo "📄 Contenido de index.html:"
+        head -20 index.html
+        echo ""
+        echo "🔍 Verificando si existe el texto requerido:"
+        if grep -q "Hola Mundo DevOps" index.html; then
+          echo "✅ Texto 'Hola Mundo DevOps' encontrado en index.html"
+        else
+          echo "❌ Texto 'Hola Mundo DevOps' NO encontrado en index.html"
+          exit 1
+        fi
+        
+        if grep -q "funcionando correctamente" index.html; then
+          echo "✅ Texto 'funcionando correctamente' encontrado en index.html"
+        else
+          echo "❌ Texto 'funcionando correctamente' NO encontrado en index.html"
+          exit 1
+        fi
 
-    - name: Instalar servidor HTTP para pruebas
-      run: npm install -g http-server
+    - name: Configurar Python para servidor de pruebas
+      run: |
+        # Usaremos el servidor HTTP integrado de Python
+        python3 --version
 
-    - name: Ejecutar pruebas
+    - name: Ejecutar pruebas con servidor HTTP
       run: |
         # Iniciar servidor en segundo plano
-        http-server -p 8080 . &
+        python3 -m http.server 8080 &
         SERVER_PID=$!
         
         # Esperar a que el servidor inicie
-        sleep 3
+        sleep 5
+        
+        # Verificar que el servidor está funcionando
+        if curl -f http://localhost:8080/index.html; then
+          echo "✅ Servidor HTTP funcionando correctamente"
+        else
+          echo "❌ Error: Servidor HTTP no responde"
+          exit 1
+        fi
         
         # Ejecutar pruebas verificando el contenido HTML
-        echo "Ejecutando pruebas..."
+        echo "🧪 Ejecutando pruebas..."
         
         # Prueba 1: Verificar que el título existe
         if curl -s http://localhost:8080/index.html | grep -q "Hola Mundo DevOps"; then
           echo "✅ Prueba 1 pasó: Título encontrado"
         else
           echo "❌ Prueba 1 falló: Título no encontrado"
+          echo "Contenido de la respuesta:"
+          curl -s http://localhost:8080/index.html | head -10
           exit 1
         fi
         
@@ -61,7 +95,6 @@ jobs:
         
         # Detener servidor
         kill $SERVER_PID
-        
         echo "🎉 Todas las pruebas pasaron correctamente"
 
   build-and-push:
@@ -74,37 +107,82 @@ jobs:
     - name: Checkout código
       uses: actions/checkout@v3
 
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
     - name: Login a Docker Hub
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: Construir imagen Docker
-      run: |
-        docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/mi-app-html:latest .
+    - name: Extraer metadatos para Docker
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=sha,prefix=,suffix=,format=short
+          type=raw,value=latest
 
-    - name: Publicar imagen en Docker Hub
-      run: |
-        docker push ${{ secrets.DOCKERHUB_USERNAME }}/mi-app-html:latest
-        echo "✅ Imagen publicada en Docker Hub: ${{ secrets.DOCKERHUB_USERNAME }}/mi-app-html:latest"
+    - name: Construir y publicar imagen Docker
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
 
-  deploy:
+    - name: Verificar imagen publicada
+      run: |
+        echo "✅ Imagen publicada en Docker Hub: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}"
+        echo "📦 Tags: ${{ steps.meta.outputs.tags }}"
+
+  deploy-render:
     name: Desplegar en Render
     runs-on: ubuntu-latest
     needs: build-and-push
     if: github.event_name == 'push' && success()
     
     steps:
-    - name: Notificar despliegue
+    - name: Checkout código
+      uses: actions/checkout@v3
+
+    - name: Configurar despliegue en Render
+      env:
+        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
       run: |
-        echo "🚀 Iniciando proceso de despliegue en Render"
-        echo "📦 Imagen: ${{ secrets.DOCKERHUB_USERNAME }}/mi-app-html:latest"
+        # Verificar que tenemos las credenciales necesarias
+        if [ -z "$RENDER_API_KEY" ] || [ -z "$SERVICE_ID" ]; then
+          echo "⚠️  Advertencia: No se configuraron los secrets para Render"
+          echo "Para desplegar en Render, configura RENDER_API_KEY y RENDER_SERVICE_ID en los secrets de GitHub"
+          exit 0
+        fi
+
+        echo "🚀 Iniciando despliegue en Render..."
         
-        # En un escenario real, aquí se incluiría la lógica para desplegar en Render
-        # usando la API de Render o el CLI oficial
+        # Realizar deploy usando la API de Render
+        RESPONSE=$(curl -s -o response.json -w "%{http_code}" \
+          -X POST "https://api.render.com/v1/services/$SERVICE_ID/deploys" \
+          -H "Authorization: Bearer $RENDER_API_KEY" \
+          -H "Content-Type: application/json" \
+          --data '{"clearCache": true}')
         
-        # Simulamos el despliegue con una espera
-        sleep 10
-        echo "✅ ¡Despliegue completado con éxito!"
-        echo "🌐 La aplicación debería estar disponible en Render"
+        if [ "$RESPONSE" -eq 201 ]; then
+          DEPLOY_ID=$(cat response.json | grep -o '"id":"[^"]*' | cut -d'"' -f4)
+          echo "✅ Despliegue iniciado correctamente. ID: $DEPLOY_ID"
+          echo "Puedes ver el progreso en: https://dashboard.render.com/web/$SERVICE_ID"
+        else
+          echo "❌ Error al iniciar el despliegue. Código de respuesta: $RESPONSE"
+          cat response.json
+          exit 1
+        fi
+
+    - name: Notificar éxito
+      if: success()
+      run: |
+        echo "🎉 ¡Pipeline completado con éxito!"
+        echo "📦 Imagen Docker: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest"
+        echo "🌐 Aplicación desplegada en Render"

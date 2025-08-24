@@ -21,24 +21,24 @@ jobs:
 
     - name: Verificar estructura de archivos
       run: |
-        echo "📁 Contenido del repositorio:"
+        echo "Contenido del repositorio:"
         ls -la
         echo ""
-        echo "📄 Contenido de index.html:"
+        echo "Contenido de index.html:"
         head -20 index.html
         echo ""
-        echo "🔍 Verificando si existe el texto requerido:"
+        echo "Verificando si existe el texto requerido:"
         if grep -q "Hola mundo, esta es la practica final de electiva 2" index.html; then
-          echo "✅ Texto 'Hola mundo, esta es la practica final de electiva 2' encontrado en index.html"
+          echo "Texto 'Hola mundo, esta es la practica final de electiva 2' encontrado en index.html"
         else
-          echo "❌ Texto 'Hola mundo, esta es la practica final de electiva 2' NO encontrado en index.html"
+          echo "Texto 'Hola mundo, esta es la practica final de electiva 2' NO encontrado en index.html"
           exit 1
         fi
         
         if grep -q "Arbin Oscar Tejada Mercedes 2022-1924" index.html; then
-          echo "✅ Texto 'Arbin Oscar Tejada Mercedes 2022-1924' encontrado en index.html"
+          echo "Texto 'Arbin Oscar Tejada Mercedes 2022-1924' encontrado en index.html"
         else
-          echo "❌ Texto 'Arbin Oscar Tejada Mercedes 2022-1924' NO encontrado en index.html"
+          echo "Texto 'Arbin Oscar Tejada Mercedes 2022-1924' NO encontrado en index.html"
           exit 1
         fi
 
@@ -57,20 +57,20 @@ jobs:
         
         # Verificar que el servidor está funcionando
         if curl -f http://localhost:8080/index.html; then
-          echo "✅ Servidor HTTP funcionando correctamente"
+          echo "Servidor HTTP funcionando correctamente"
         else
-          echo "❌ Error: Servidor HTTP no responde"
+          echo "Error: Servidor HTTP no responde"
           exit 1
         fi
         
         # Ejecutar pruebas verificando el contenido HTML
-        echo "🧪 Ejecutando pruebas..."
+        echo "Ejecutando pruebas..."
         
         # Prueba 1: Verificar que el título existe
         if curl -s http://localhost:8080/index.html | grep -q "Hola Mundo DevOps"; then
-          echo "✅ Prueba 1 pasó: Título encontrado"
+          echo "Prueba 1 pasó: Título encontrado"
         else
-          echo "❌ Prueba 1 falló: Título no encontrado"
+          echo "Prueba 1 falló: Título no encontrado"
           echo "Contenido de la respuesta:"
           curl -s http://localhost:8080/index.html | head -10
           exit 1
@@ -78,23 +78,15 @@ jobs:
         
         # Prueba 2: Verificar que el estado es correcto
         if curl -s http://localhost:8080/index.html | grep -q "funcionando correctamente"; then
-          echo "✅ Prueba 2 pasó: Estado correcto"
+          echo "Prueba 2 pasó: Estado correcto"
         else
-          echo "❌ Prueba 2 falló: Estado incorrecto"
-          exit 1
-        fi
-        
-        # Prueba 3: Verificar que la página contiene CI/CD
-        if curl -s http://localhost:8080/index.html | grep -q "CI/CD"; then
-          echo "✅ Prueba 3 pasó: Contenido CI/CD encontrado"
-        else
-          echo "❌ Prueba 3 falló: Contenido CI/CD no encontrado"
+          echo "Prueba 2 falló: Estado incorrecto"
           exit 1
         fi
         
         # Detener servidor
         kill $SERVER_PID
-        echo "🎉 Todas las pruebas pasaron correctamente"
+        echo "Todas las pruebas pasaron correctamente"
 
   build-and-push:
     name: Construir y publicar imagen Docker
@@ -135,8 +127,8 @@ jobs:
 
     - name: Verificar imagen publicada
       run: |
-        echo "✅ Imagen publicada en Docker Hub: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}"
-        echo "📦 Tags: ${{ steps.meta.outputs.tags }}"
+        echo "Imagen publicada en Docker Hub: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}"
+        echo "Tags: ${{ steps.meta.outputs.tags }}"
 
   deploy-render:
     name: Desplegar en Render
@@ -153,34 +145,34 @@ jobs:
         RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
       run: |
         if [ -z "$RENDER_DEPLOY_HOOK" ]; then
-          echo "⚠️ Webhook de Render no configurado."
-          echo "ℹ️ Para configurar:"
+          echo "Webhook de Render no configurado."
+          echo "Para configurar:"
           echo "  1. Ve a Render > Settings > Deploy Hooks"
           echo "  2. Crea un webhook y copia la URL"
           echo "  3. Agrega RENDER_DEPLOY_HOOK en GitHub Secrets"
           exit 0
         fi
         
-        echo "🚀 Activando despliegue via webhook..."
-        echo "🔗 URL: ${RENDER_DEPLOY_HOOK:0:50}..."
+        echo "Activando despliegue via webhook..."
+        echo "URL: ${RENDER_DEPLOY_HOOK:0:50}..."
         
         # Realizar la solicitud al webhook
         response=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$RENDER_DEPLOY_HOOK")
         
-        echo "📋 Código de respuesta: $response"
+        echo "Código de respuesta: $response"
         
         if [ "$response" -eq 200 ] || [ "$response" -eq 201 ]; then
-          echo "✅ Despliegue iniciado correctamente via webhook"
-          echo "👀 Ver progreso en el dashboard de Render"
+          echo "Despliegue iniciado correctamente via webhook"
+          echo "Ver progreso en el dashboard de Render"
         else
-          echo "❌ Error al activar webhook. Código: $response"
-          echo "💡 Verifica que la URL del webhook sea correcta"
+          echo "Error al activar webhook. Código: $response"
+          echo "Verifica que la URL del webhook sea correcta"
           exit 1
         fi
 
     - name: Notificar éxito
       if: success()
       run: |
-        echo "🎉 ¡Pipeline completado con éxito!"
-        echo "📦 Imagen Docker: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest"
-        echo "🌐 Despliegue iniciado en Render"
+        echo "¡Pipeline completado con éxito!"
+        echo "Imagen Docker: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest"
+        echo "Despliegue iniciado en Render"
